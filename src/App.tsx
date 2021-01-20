@@ -1,26 +1,27 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Button, Container, Row, Col } from 'reactstrap';
+
+function MyCol(props: any) {
+    return <Col xs={{ size: 8, offset: 2 }} className="text-center">{props.children}</Col>;
+}
+
+function Link(props: any) {
+    return <Row className="mb-2">
+        <MyCol>
+            <Button href={props.url} className="w-100 rounded-pill" size="lg" color="secondary">{props.children}</Button>
+        </MyCol>
+    </Row>
+}
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    return (
+        <Container>
+            <Row className="mb-4 mt-4">
+                <MyCol><h1 className="text-center">The Hebrew Bible</h1><h2>as read by Abraham Schmueloff</h2></MyCol>
+            </Row>
+            <audio controls src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3"/>
+        </Container>
+    );
 }
 
 export default App;
