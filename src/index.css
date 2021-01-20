@@ -8,3 +8,20 @@ body {
     background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
     background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
 }
+
+@font-face {
+    font-family: 'SBL Hebrew';
+    src: url('SBLHebrew.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+table.worksheet tr td {
+    border-top: 3px solid black;
+}
+
+.biblical-hebrew {
+    font-family: 'SBL Hebrew';
+    font-weight: normal;
+    font-style: normal;
+}
