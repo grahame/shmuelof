@@ -1,18 +1,19 @@
 import React from 'react';
-import { Button, Container, Row, Col } from 'reactstrap';
+import { Form, FormGroup, Label, Input, Container, Row, Col } from 'reactstrap';
+import './App.css';
 import axios from 'axios';
 
-enum SefariaLanguage {
-    Hebrew,
+enum TranslationLanguage {
+    None,
     English
 };
 
 type SefariaProps = {
     verse: string,
-    lang: SefariaLanguage,
+    translation: TranslationLanguage,
 };
 
-const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, lang }: SefariaProps) => {
+const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, translation }: SefariaProps) => {
     const [sefariaResponse, setSefariaResponse]: [any, any] = React.useState({ 'text': '', 'he': '' });
 
     React.useEffect(() => {
@@ -30,7 +31,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, lang }: Sefaria
             });
     }, [verse]);
 
-    if (lang === SefariaLanguage.English) {
+    if (translation === TranslationLanguage.English) {
         return <div className="">{sefariaResponse.text}</div>;
     } else {
         return <div className="biblical-hebrew display-3">{sefariaResponse.he}</div>;
@@ -38,37 +39,39 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, lang }: Sefaria
 
 };
 
-function MyCol(props: any) {
-    return <Col xs={{ size: 8, offset: 2 }} className="text-center">{props.children}</Col>;
-}
-
 function App() {
     return (
-        <Container>
-            <Row className="mb-4 mt-4">
-                <MyCol><h1 className="text-center">The Hebrew Bible</h1><h2>as read by Abraham Schmueloff</h2></MyCol>
-            </Row>
-            <Row className="mb-4 mt-4">
-                <MyCol>
+        <div>
+            <div color="light" className="fixed-top">
+                <div>
+                    <Form>
+                        <FormGroup check>
+                            <Label check>
+                                <Input type="checkbox" />
+                                Interlinear
+                            </Label>
+                        </FormGroup>
+                    </Form>
                     <audio controls src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3" />
-                </MyCol>
-            </Row>
-            <Row className="mb-4 mt-4">
-                <Col xs={{ size: 5, offset: 1 }} className="text-left">
-                    <Sefaria lang={SefariaLanguage.English} verse="Genesis 8"></Sefaria>
-                </Col>
-                <Col xs={{ size: 5 }} className="text-right">
-                    <Sefaria lang={SefariaLanguage.Hebrew} verse="Genesis 8"></Sefaria>
-                </Col>
-            </Row>
-            <Row>
-                <p>
-                    English and Hebrew text from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>.
+                </div>
+            </div>
+            <Container id="main">
+
+                <Row className="mb-4 mt-4">
+                    <Col xs={{ size: 10, offset: 1 }} className="text-right">
+                        <Sefaria translation={TranslationLanguage.English} verse="Genesis 8"></Sefaria>
+                    </Col>
+                </Row>
+                <hr></hr>
+                <Row>
+                    <p>
+                        English and Hebrew tejjxt from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>.
                     Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>.
                     Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">More about Abraham Shmuelof.</a>
-                </p>
-            </Row>
-        </Container>
+                    </p>
+                </Row>
+            </Container>
+        </div>
     );
 }
 
