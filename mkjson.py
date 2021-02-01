@@ -2,20 +2,27 @@
 
 import json
 from urllib.parse import quote as uq
+import sys
 
 
 def main():
     urls = []
 
-    def make_url(category, book_num, book, chapter):
-        return "https://raw.githubusercontent.com/grahame/Schmueloff---{}/master/{}/{}".format(
+    def make_link(category, book_num, book, chapter):
+        url = "https://raw.githubusercontent.com/grahame/Schmueloff---{}/master/{}/{}".format(
             uq(category),
             uq('{:02} {}'.format(book_num, book)),
             uq('{} {:02}.mp3'.format(book, chapter)))
+        return {
+            'category': category,
+            'book': book,
+            'chapter': chapter,
+            'url': url
+        }
 
     def add_urls(category, book_num, book, chapters):
         for i in range(1, chapters + 1):
-            urls.append(make_url(category, book_num, book, i))
+            urls.append(make_link(category, book_num, book, i))
 
     def add_category(category, *books):
         for book_num, (book, chapters) in enumerate(books, 1):
@@ -75,13 +82,13 @@ def main():
     with open('src/urls.json', 'w') as fd:
         json.dump({'urls': urls}, fd)
 
-    s = requests.Session()
-    for url in urls:
-        resp = s.head(url)
-        print(url)
-        assert(resp.status_code == 200)
-
     print(len(urls))
+
+    if len(sys.argv) > 1:
+        s = requests.Session()
+        for info in urls:
+            resp = s.head(info['url'])
+            assert(resp.status_code == 200)
 
 
 if __name__ == '__main__':
