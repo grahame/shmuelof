@@ -1,4 +1,5 @@
 import React from 'react';
+import {useRef} from 'react';
 import { Form, FormGroup, Label, Input, Container, Row, Col } from 'reactstrap';
 import './App.css';
 import axios from 'axios';
@@ -40,6 +41,15 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, translation }: 
 };
 
 function App() {
+    const audioRef = useRef<HTMLAudioElement>(null);
+
+    const setPlayBack = (rate: number) => {
+        if (audioRef.current) {
+            console.log("set " + rate);
+            audioRef.current.playbackRate = rate;
+        }
+    };
+
     return (
         <div>
             <div color="light" className="fixed-top">
@@ -52,7 +62,12 @@ function App() {
                             </Label>
                         </FormGroup>
                     </Form>
-                    <audio controls src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3" />
+                    <audio
+                        id="playback-control"
+                        ref={audioRef}
+                        controls
+                        onCanPlay={() => setPlayBack(0.75)}
+                        src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3" />
                 </div>
             </div>
             <Container id="main">
