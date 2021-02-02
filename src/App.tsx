@@ -1,49 +1,14 @@
 import React from 'react';
+import { Sefaria } from './Sefaria';
 import { useRef } from 'react';
 import { ButtonToggle, ButtonGroup, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
 import './App.css';
 import URLs from './urls.json';
-import axios from 'axios';
 
 enum PlaybackRate {
     Slow,
     Normal,
     Fast
-};
-
-enum TranslationLanguage {
-    None,
-    English
-};
-
-type SefariaProps = {
-    verse: string,
-    translation: TranslationLanguage,
-};
-
-const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, translation }: SefariaProps) => {
-    const [sefariaResponse, setSefariaResponse]: [any, any] = React.useState({ 'text': '', 'he': '' });
-
-    React.useEffect(() => {
-        axios
-            .get('https://www.sefaria.org/api/texts/' + encodeURIComponent(verse), {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                timeout: 5000,
-            })
-            .then((response) => {
-                setSefariaResponse(response.data);
-            })
-            .catch((ex) => {
-            });
-    }, [verse]);
-
-    if (translation === TranslationLanguage.English) {
-        return <div className="">{sefariaResponse.text}</div>;
-    } else {
-        return <div className="biblical-hebrew display-3">{sefariaResponse.he}</div>;
-    }
 };
 
 function Controls({displayInterlinear, setDisplayInterlinear}: {displayInterlinear: boolean, setDisplayInterlinear: any}) {
@@ -115,13 +80,15 @@ function Footer() {
 
 function App() {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
+    const [bookAndChapter] = React.useState<string | undefined>();
+
     return (
         <div>
             <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} />
             <Container id="main">
                 <Row className="mb-4 mt-4">
                     <Col xs={{ size: 10, offset: 1 }} className="text-right">
-                        <Sefaria translation={TranslationLanguage.English} verse="Genesis 8"></Sefaria>
+                        <Sefaria displayInterlinear={displayInterlinear} verse="Genesis 8"></Sefaria>
                     </Col>
                 </Row>
                 <hr></hr>
