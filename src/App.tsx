@@ -1,13 +1,9 @@
 import React from 'react';
 import { useRef } from 'react';
-import { Button, ButtonToggle, ButtonGroup, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
+import { ButtonToggle, ButtonGroup, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
 import './App.css';
 import URLs from './urls.json';
 import axios from 'axios';
-
-type ControlState = {
-    playbackRate: number,
-};
 
 enum PlaybackRate {
     Slow,
@@ -50,15 +46,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, translation }: 
     }
 };
 
-function RateToggle({ playbackRate, setPlaybackRate, value, label }: { playbackRate: number; setPlaybackRate: any, value: PlaybackRate; label: string; }) {
-    return <>
-            <ButtonToggle
-                className={playbackRate === value ? 'active' : undefined}
-                onClick={() => setPlaybackRate(value)}>{label}</ButtonToggle>
-        </>;
-}
-
-function Controls() {
+function Controls({displayInterlinear, setDisplayInterlinear}: {displayInterlinear: boolean, setDisplayInterlinear: any}) {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
     const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -67,15 +55,23 @@ function Controls() {
             return;
         }
         var rate: number = 1.0;
-        if (playbackRate == PlaybackRate.Slow) {
+        if (playbackRate === PlaybackRate.Slow) {
             rate = 0.75;
-        } else if (playbackRate == PlaybackRate.Fast) {
+        } else if (playbackRate === PlaybackRate.Fast) {
             rate = 1.25;
         }
         audioRef.current.playbackRate = rate;
     };
-
+    // apply the current playback rate to the ref if it exists
     applyPlayback();
+
+    function RateToggle({ value, label }: { value: PlaybackRate; label: string; }) {
+        return <>
+                <ButtonToggle
+                    className={playbackRate === value ? 'active' : undefined}
+                    onClick={() => setPlaybackRate(value)}>{label}</ButtonToggle>
+            </>;
+    }
 
     return <>
         <div className="fixed-top bg-dark text-light">
@@ -85,9 +81,9 @@ function Controls() {
                 </Col>
                 <Col xs={{ size: 2 }}>
                     <ButtonGroup>
-                        <RateToggle value={PlaybackRate.Slow} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Slow" />
-                        <RateToggle value={PlaybackRate.Normal} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Normal" />
-                        <RateToggle value={PlaybackRate.Fast} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Fast" />
+                        <RateToggle value={PlaybackRate.Slow} label="Slow" />
+                        <RateToggle value={PlaybackRate.Normal} label="Normal" />
+                        <RateToggle value={PlaybackRate.Fast} label="Fast" />
                     </ButtonGroup>
                 </Col>
                 <Col xs={{ size: 2 }}>
@@ -118,9 +114,10 @@ function Footer() {
 }
 
 function App() {
+    const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
     return (
         <div>
-            <Controls />
+            <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} />
             <Container id="main">
                 <Row className="mb-4 mt-4">
                     <Col xs={{ size: 10, offset: 1 }} className="text-right">
