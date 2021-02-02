@@ -1,8 +1,19 @@
 import React from 'react';
-import {useRef} from 'react';
-import { Form, FormGroup, Label, Input, Container, Row, Col } from 'reactstrap';
+import { useRef } from 'react';
+import { Button, ButtonToggle, ButtonGroup, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
 import './App.css';
+import URLs from './urls.json';
 import axios from 'axios';
+
+type ControlState = {
+    playbackRate: number,
+};
+
+enum PlaybackRate {
+    Slow,
+    Normal,
+    Fast
+};
 
 enum TranslationLanguage {
     None,
@@ -37,54 +48,87 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, translation }: 
     } else {
         return <div className="biblical-hebrew display-3">{sefariaResponse.he}</div>;
     }
-
 };
 
-function App() {
+function RateToggle({ playbackRate, setPlaybackRate, value, label }: { playbackRate: number; setPlaybackRate: any, value: PlaybackRate; label: string; }) {
+    return <>
+            <ButtonToggle
+                className={playbackRate === value ? 'active' : undefined}
+                onClick={() => setPlaybackRate(value)}>{label}</ButtonToggle>
+        </>;
+}
+
+function Controls() {
+    const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
     const audioRef = useRef<HTMLAudioElement>(null);
 
-    const setPlayBack = (rate: number) => {
-        if (audioRef.current) {
-            console.log("set " + rate);
-            audioRef.current.playbackRate = rate;
+    const applyPlayback = () => {
+        if (!audioRef.current) {
+            return;
         }
+        var rate: number = 1.0;
+        if (playbackRate == PlaybackRate.Slow) {
+            rate = 0.75;
+        } else if (playbackRate == PlaybackRate.Fast) {
+            rate = 1.25;
+        }
+        audioRef.current.playbackRate = rate;
     };
 
-    return (
-        <div>
-            <div color="light" className="fixed-top">
-                <div>
-                    <Form>
-                        <FormGroup check>
-                            <Label check>
-                                <Input type="checkbox" />
-                                Interlinear
-                            </Label>
-                        </FormGroup>
-                    </Form>
+    applyPlayback();
+
+    return <>
+        <div className="fixed-top bg-dark text-light">
+            <Row>
+                <Col xs={{ size: 1, offset: 1 }}>
+                    <ButtonToggle>Interlinear</ButtonToggle>
+                </Col>
+                <Col xs={{ size: 2 }}>
+                    <ButtonGroup>
+                        <RateToggle value={PlaybackRate.Slow} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Slow" />
+                        <RateToggle value={PlaybackRate.Normal} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Normal" />
+                        <RateToggle value={PlaybackRate.Fast} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} label="Fast" />
+                    </ButtonGroup>
+                </Col>
+                <Col xs={{ size: 2 }}>
+                </Col>
+            </Row>
+            <Row>
+                <Col xs={{ size: 10, offset: 1 }}>
                     <audio
                         id="playback-control"
                         ref={audioRef}
                         controls
-                        onCanPlay={() => setPlayBack(0.75)}
+                        onCanPlay={() => applyPlayback()}
                         src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3" />
-                </div>
-            </div>
-            <Container id="main">
+                </Col>
+            </Row>
+        </div>
+    </>;
+}
 
+function Footer() {
+    return <Row>
+        <p>
+            English and Hebrew text from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>.
+            Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>.
+            Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">More about Abraham Shmuelof.</a>
+        </p>
+    </Row>;
+}
+
+function App() {
+    return (
+        <div>
+            <Controls />
+            <Container id="main">
                 <Row className="mb-4 mt-4">
                     <Col xs={{ size: 10, offset: 1 }} className="text-right">
                         <Sefaria translation={TranslationLanguage.English} verse="Genesis 8"></Sefaria>
                     </Col>
                 </Row>
                 <hr></hr>
-                <Row>
-                    <p>
-                        English and Hebrew tejjxt from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>.
-                    Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>.
-                    Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">More about Abraham Shmuelof.</a>
-                    </p>
-                </Row>
+                <Footer />
             </Container>
         </div>
     );
