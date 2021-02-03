@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import sanitize from 'sanitize-html';
 import { Row, Col } from 'reactstrap';
 
 // this isn't complete, it's just a sketch of what we get back
@@ -36,8 +37,13 @@ type VerseProps = {
 
 const Verse: React.FunctionComponent<VerseProps> = ({ number, hebrew, english, interlinear }: VerseProps) => {
     var englishElem;
+
+
     if (interlinear) {
-        englishElem = <div className="english interlinear text-left">{ english }</div>
+        const sanitizedEnglish = {'__html': sanitize(english, {
+            allowedTags: ['b', 'i', 'em', 'strong']
+        })};
+        englishElem = <div className="english interlinear text-left" dangerouslySetInnerHTML={sanitizedEnglish}></div>
     }
     return <>
         <Row className="verse-row">
@@ -62,6 +68,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, displayInterlin
     const [sefariaError, setSefariaError]: [string|undefined, any] = React.useState();
 
     React.useEffect(() => {
+        setSefariaResponse(undefined);
         axios
             .get('https://www.sefaria.org/api/texts/' + encodeURIComponent(verse), {
                 headers: {
