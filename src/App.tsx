@@ -227,7 +227,7 @@ function ScripturePage({match}: {match: any}) {
         <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} />
         <Container id="main">
             <Row className="mb-4 mt-4">
-                <Col xs={{ size: 10, offset: 1 }}>
+                <Col xs={{ size: 12 }}>
                     <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
                 </Col>
             </Row>
