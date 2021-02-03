@@ -204,16 +204,7 @@ function Footer() {
         <hr />
         <Row>
             <p>
-                English and Hebrew text from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>.
-            </p>
-            <p>
-                Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>.
-            <p>
-            </p>
-                Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">More about Abraham Shmuelof.</a>
-            </p>
-            <p>
-                This software was developed by Grahame Bowland, and is open source: <a href="https://github.com/grahame/shmuelof/">github.com/grahame/shmuelof</a>
+                English and Hebrew text from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>. Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>. Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. You can find out more about Abraham Shmuelof on the site of <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">Michael Kolarcik</a>. This software was developed by Grahame Bowland, and is open source: <a href="https://github.com/grahame/shmuelof/">github.com/grahame/shmuelof</a>
             </p>
         </Row>
     </>;
