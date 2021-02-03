@@ -155,6 +155,12 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
     }
 
     function SetOffset(offset: number): undefined {
+        if (selectedChapter + offset < 0) {
+            return;
+        }
+        if (selectedChapter + offset >= URLs.urls.length) {
+            return;
+        }
         history.push('/' + chapterToSlug(selectedChapter + offset));
         return undefined;
     }
