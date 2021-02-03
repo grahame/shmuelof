@@ -94,7 +94,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, displayInterlin
     }
 
     const verses = sefariaResponse.he.map((hebrew, idx) => 
-        <Verse interlinear={displayInterlinear} number={idx+1} hebrew={hebrew} english={sefariaResponse.text[idx]} />
+        <Verse key={idx} interlinear={displayInterlinear} number={idx+1} hebrew={hebrew} english={sefariaResponse.text[idx]} />
     );
 
     return <>

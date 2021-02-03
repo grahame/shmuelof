@@ -72,6 +72,16 @@ function ChapterSelector({ value, set } : {value: number, set: any} ) {
     const [selected, setSelected ] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
     const history = useHistory();
 
+    // this is ugly: while someone is typing, selected from the Typeahead
+    // control goes to `undefined`. we need to allow this for the internal
+    // operation of the control. however, if `value` changes for some
+    // external reason then we need to update the selection.
+    React.useEffect(() => {
+        if (selected && selected.length > 0 && selected[0].id !== value) {
+            setSelected([MakeLabel(value)]);
+        }
+    }, [value, selected]);
+
     const maybeNav = function(labels: Array<BookLabel>) {
         setSelected(labels);
         if (labels.length === 0) {
@@ -80,7 +90,7 @@ function ChapterSelector({ value, set } : {value: number, set: any} ) {
         history.push('/' + chapterToSlug(labels[0].id));
     }
 
-    return <Typeahead options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybeNav} />
+    return <Typeahead id="books-and-chapters" inputProps={{className: "bg-dark text-light"}} options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybeNav} />
 }
 
 function PlaybackToName(rate: PlaybackRate) {
@@ -90,6 +100,7 @@ function PlaybackToName(rate: PlaybackRate) {
 
 function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, setSelectedChapter }: ControlsProps) {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
+    const history = useHistory();
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const applyPlayback = () => {
@@ -143,6 +154,11 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
         </>;
     }
 
+    function SetOffset(offset: number): undefined {
+        history.push('/' + chapterToSlug(selectedChapter + offset));
+        return undefined;
+    }
+
     return <>
         <div className="fixed-top bg-dark text-light">
             <Row>
@@ -155,9 +171,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                             <RateControl />
                         </ButtonGroup>
                         <ButtonGroup>
-                            <Button><FontAwesomeIcon icon={faAngleDoubleLeft} /></Button>
+                            <Button disabled={selectedChapter === 0}><FontAwesomeIcon icon={faAngleDoubleLeft} onClick={() => SetOffset(-1)} /></Button>
                             <ChapterSelector value={selectedChapter} set={setSelectedChapter} />
-                            <Button><FontAwesomeIcon icon={faAngleDoubleRight} /></Button>
+                            <Button disabled={selectedChapter >= URLs.urls.length}><FontAwesomeIcon icon={faAngleDoubleRight} onClick={() => SetOffset(1)} /></Button>
                         </ButtonGroup>
 
                     </ButtonToolbar>
@@ -170,7 +186,7 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                         ref={audioRef}
                         controls
                         onCanPlay={() => applyPlayback()}
-                        src="https://raw.githubusercontent.com/grahame/Schmueloff---Torah/master/01%20Genesis/Genesis%2008.mp3" />
+                        src={URLs.urls[selectedChapter].url} />
                 </Col>
             </Row>
         </div>
