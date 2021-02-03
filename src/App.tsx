@@ -1,7 +1,11 @@
 import React from 'react';
 import { Sefaria } from './Sefaria';
 import { useRef } from 'react';
-import { ButtonToolbar, ButtonToggle, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from '@fortawesome/free-solid-svg-icons'
+import { Button, ButtonToolbar, ButtonToggle, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
+import { Typeahead } from 'react-bootstrap-typeahead';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 import './App.css';
 import URLs from './urls.json';
 
@@ -16,28 +20,44 @@ enum PlaybackRate {
 type ControlsProps = {
     displayInterlinear: boolean;
     setDisplayInterlinear: any;
+    selectedChapter: number;
+    setSelectedChapter: any;
 };
 
-function BookSelector() {
-    const [isOpen, setIsOpen] = React.useState<boolean>(false);
-    
-    return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
-        <DropdownToggle caret>Book</DropdownToggle>
-        <DropdownMenu>
-            <DropdownItem>Cats!</DropdownItem>
-        </DropdownMenu>
-    </Dropdown>;
+type BookLabel = {
+    id: number,
+    label: string
 }
 
-function ChapterSelector() {
+function MakeLabel(idx: number) : BookLabel {
+    var url = URLs.urls[idx];
+    return {
+        id: idx,
+        label: `${url.book} ${url.chapter}`
+    }
+}
+
+function BooksAndChapters() {
+    var books = new Array<BookLabel>();
+    for (const [idx, url] of URLs.urls.entries()) {
+        books.push(MakeLabel(idx));
+    }
+    return books;
+}
+
+function ChapterSelector({ value, set } : {value: number, set: any} ) {
     const [isOpen, setIsOpen] = React.useState<boolean>(false);
-    
-    return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
-        <DropdownToggle caret>Chapter</DropdownToggle>
-        <DropdownMenu>
-            <DropdownItem>Cats!</DropdownItem>
-        </DropdownMenu>
-    </Dropdown>;
+    const [selected, setSelected ] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
+
+    const maybePushUp = function(labels: Array<BookLabel>) {
+        setSelected(labels);
+        if (labels.length === 0) {
+            return;
+        }
+        set(labels[0].id);
+    }
+
+    return <Typeahead options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybePushUp} />
 }
 
 function PlaybackToName(rate: PlaybackRate) {
@@ -45,7 +65,7 @@ function PlaybackToName(rate: PlaybackRate) {
 
 }
 
-function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) {
+function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, setSelectedChapter }: ControlsProps) {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
     const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -58,9 +78,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
             rate = 0.5;
         } else if (playbackRate === PlaybackRate.Slow) {
             rate = 0.75;
-        } else if (playbackRate == PlaybackRate.Fast) {
+        } else if (playbackRate === PlaybackRate.Fast) {
             rate = 1.25;
-        } else if (playbackRate == PlaybackRate.Very_Fast) {
+        } else if (playbackRate === PlaybackRate.Very_Fast) {
             rate = 1.5
         }
         audioRef.current.playbackRate = rate;
@@ -81,7 +101,7 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
         const [isOpen, setIsOpen] = React.useState<boolean>(false);
         
         return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
-            <DropdownToggle caret>{PlaybackToName(playbackRate)}</DropdownToggle>
+            <DropdownToggle caret><FontAwesomeIcon icon={faTachometerAlt} /> {PlaybackToName(playbackRate)}</DropdownToggle>
             <DropdownMenu>
                 <RateToggle value={PlaybackRate.Very_Slow} />
                 <RateToggle value={PlaybackRate.Slow} />
@@ -96,7 +116,7 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
         return <>
             <ButtonToggle
                 className={displayInterlinear ? 'active' : undefined}
-                onClick={() => setDisplayInterlinear(!displayInterlinear)}>Interlinear</ButtonToggle>
+                onClick={() => setDisplayInterlinear(!displayInterlinear)}><FontAwesomeIcon icon={faGripLines} /> Interlinear</ButtonToggle>
         </>;
     }
 
@@ -112,8 +132,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
                             <RateControl />
                         </ButtonGroup>
                         <ButtonGroup>
-                            <BookSelector />
-                            <ChapterSelector />
+                            <Button><FontAwesomeIcon icon={faAngleDoubleLeft} /></Button>
+                            <ChapterSelector value={selectedChapter} set={setSelectedChapter} />
+                            <Button><FontAwesomeIcon icon={faAngleDoubleRight} /></Button>
                         </ButtonGroup>
 
                     </ButtonToolbar>
@@ -148,15 +169,19 @@ function Footer() {
 
 function App() {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
+    const [selectedChapter, setSelectedChapter] = React.useState<number>(0);
     const [bookAndChapter] = React.useState<string | undefined>();
 
+    var url = URLs.urls[selectedChapter];
+
+    const getCurrentChapter = () => `${url.book} ${url.chapter}`;
     return (
         <div>
-            <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} />
+            <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} />
             <Container id="main">
                 <Row className="mb-4 mt-4">
                     <Col xs={{ size: 10, offset: 1 }}>
-                        <Sefaria displayInterlinear={displayInterlinear} verse="Genesis 8"></Sefaria>
+                        <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
                     </Col>
                 </Row>
                 <Footer />

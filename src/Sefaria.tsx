@@ -6,24 +6,24 @@ import { Row, Col } from 'reactstrap';
 // full docs at https://github.com/Sefaria/Sefaria-Project/wiki/API-Documentation#text-api
 type SefariaResponse = {
     book: string,
-    categories: [string],
-    commentary: [string],
-    he: [string],
+    categories: Array<string>,
+    commentary: Array<string>,
+    he: Array<string>,
     heVersionSource: string,
     heVersionTitle: string,
     next: string,
-    order: [number],
+    order: Array<number>,
     prev: string,
     ref: string,
-    sectionNames: [string],
-    sections: [number],
-    text: [string],
-    titleVariants: [string],
-    toSections: [number],
+    sectionNames: Array<string>,
+    sections: Array<number>,
+    text: Array<string>,
+    titleVariants: Array<string>,
+    toSections: Array<number>,
     type: string,
     versionSource: string,
     versionTitle: string,
-    versions: [string] | undefined,
+    versions: Array<string> | undefined,
 };
 
 type VerseProps = {
@@ -74,7 +74,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, displayInterlin
                 setSefariaResponse(response.data);
             })
             .catch((ex) => {
-                setSefariaError(`Unable to retrieve scripture from Sefaria ${ex.response.status}`);
+                setSefariaError(`Unable to retrieve scripture from Sefaria.`);
             });
     }, [verse]);
 
