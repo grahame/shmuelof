@@ -70,16 +70,17 @@ function chapterToSlug(idx: number) {
 
 function ChapterSelector({ value, set } : {value: number, set: any} ) {
     const [selected, setSelected ] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
+    const history = useHistory();
 
-    const maybePushUp = function(labels: Array<BookLabel>) {
+    const maybeNav = function(labels: Array<BookLabel>) {
         setSelected(labels);
         if (labels.length === 0) {
             return;
         }
-        set(labels[0].id);
+        history.push('/' + chapterToSlug(labels[0].id));
     }
 
-    return <Typeahead options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybePushUp} />
+    return <Typeahead options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybeNav} />
 }
 
 function PlaybackToName(rate: PlaybackRate) {
