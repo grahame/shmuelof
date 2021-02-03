@@ -171,9 +171,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                             <RateControl />
                         </ButtonGroup>
                         <ButtonGroup>
-                            <Button disabled={selectedChapter === 0}><FontAwesomeIcon icon={faAngleDoubleLeft} onClick={() => SetOffset(-1)} /></Button>
+                            <Button disabled={selectedChapter === 0} onClick={() => SetOffset(-1)}><FontAwesomeIcon icon={faAngleDoubleLeft} /></Button>
                             <ChapterSelector value={selectedChapter} set={setSelectedChapter} />
-                            <Button disabled={selectedChapter >= URLs.urls.length}><FontAwesomeIcon icon={faAngleDoubleRight} onClick={() => SetOffset(1)} /></Button>
+                            <Button disabled={selectedChapter >= URLs.urls.length - 1} onClick={() => SetOffset(1)}><FontAwesomeIcon icon={faAngleDoubleRight} /></Button>
                         </ButtonGroup>
 
                     </ButtonToolbar>
