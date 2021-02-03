@@ -2,6 +2,7 @@ import React from 'react';
 import { Sefaria } from './Sefaria';
 import { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { HashRouter, Route, useHistory } from 'react-router-dom';
 import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from '@fortawesome/free-solid-svg-icons'
 import { Button, ButtonToolbar, ButtonToggle, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
 import { Typeahead } from 'react-bootstrap-typeahead';
@@ -39,14 +40,35 @@ function MakeLabel(idx: number) : BookLabel {
 
 function BooksAndChapters() {
     var books = new Array<BookLabel>();
-    for (const [idx, url] of URLs.urls.entries()) {
+    for (const [idx] of URLs.urls.entries()) {
         books.push(MakeLabel(idx));
     }
     return books;
 }
 
+function slugToChapter(slug: string) {
+    if (slug === undefined) {
+        return undefined;
+    }
+    const [book, chapterString] = slug.split('-');
+    const chapter = parseInt(chapterString);
+    if (isNaN(chapter)) {
+        return undefined;
+    }
+    for (const [idx, url] of URLs.urls.entries()) {
+        if ((url.book.toLowerCase() === book) && (url.chapter === chapter)) {
+            return idx;
+        }
+    }
+    return undefined;
+}
+
+function chapterToSlug(idx: number) {
+    var url = URLs.urls[idx];
+    return url.book.toLowerCase() + '-' + url.chapter;
+}
+
 function ChapterSelector({ value, set } : {value: number, set: any} ) {
-    const [isOpen, setIsOpen] = React.useState<boolean>(false);
     const [selected, setSelected ] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
 
     const maybePushUp = function(labels: Array<BookLabel>) {
@@ -167,26 +189,37 @@ function Footer() {
     </>;
 }
 
-function App() {
+function ScripturePage({match}: {match: any}) {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
-    const [selectedChapter, setSelectedChapter] = React.useState<number>(0);
-    const [bookAndChapter] = React.useState<string | undefined>();
-
-    var url = URLs.urls[selectedChapter];
-
+    const history = useHistory();
+    const selectedChapter = slugToChapter(match.params.slug);
+    const setSelectedChapter = (idx: number) => history.push('/' + chapterToSlug(idx));
+    if (selectedChapter === undefined) {
+        setSelectedChapter(0);
+        return <><p>One moment...</p> </>;
+    }
+    const url = URLs.urls[selectedChapter];
     const getCurrentChapter = () => `${url.book} ${url.chapter}`;
+
+
+    return <>
+        <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} />
+        <Container id="main">
+            <Row className="mb-4 mt-4">
+                <Col xs={{ size: 10, offset: 1 }}>
+                    <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
+                </Col>
+            </Row>
+            <Footer />
+        </Container>
+    </>;
+}
+
+function App() {
     return (
-        <div>
-            <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} />
-            <Container id="main">
-                <Row className="mb-4 mt-4">
-                    <Col xs={{ size: 10, offset: 1 }}>
-                        <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
-                    </Col>
-                </Row>
-                <Footer />
-            </Container>
-        </div>
+        <HashRouter>
+            <Route path="/:slug?" render={(props) => <ScripturePage match={props.match} />} />
+        </HashRouter>
     );
 }
 
