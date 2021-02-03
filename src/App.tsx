@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sefaria } from './Sefaria';
 import { useRef } from 'react';
-import { ButtonToggle, ButtonGroup, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
+import { ButtonToolbar, ButtonToggle, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
 import './App.css';
 import URLs from './urls.json';
 
@@ -15,6 +15,28 @@ type ControlsProps = {
     displayInterlinear: boolean;
     setDisplayInterlinear: any;
 };
+
+function BookSelector() {
+    const [isOpen, setIsOpen] = React.useState<boolean>(false);
+    
+    return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
+        <DropdownToggle caret>Book</DropdownToggle>
+        <DropdownMenu>
+            <DropdownItem>Cats!</DropdownItem>
+        </DropdownMenu>
+    </Dropdown>;
+}
+
+function ChapterSelector() {
+    const [isOpen, setIsOpen] = React.useState<boolean>(false);
+    
+    return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
+        <DropdownToggle caret>Chapter</DropdownToggle>
+        <DropdownMenu>
+            <DropdownItem>Cats!</DropdownItem>
+        </DropdownMenu>
+    </Dropdown>;
+}
 
 function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
@@ -54,17 +76,22 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
     return <>
         <div className="fixed-top bg-dark text-light">
             <Row>
-                <Col xs={{ size: 2, offset: 1 }}>
-                    <InterlinearToggle />
-                </Col>
-                <Col xs={{ size: 3 }}>
-                    <ButtonGroup>
-                        <RateToggle value={PlaybackRate.VerySlow} label="Very Slow" />
-                        <RateToggle value={PlaybackRate.Slow} label="Slow" />
-                        <RateToggle value={PlaybackRate.Normal} label="Normal" />
-                    </ButtonGroup>
-                </Col>
-                <Col xs={{ size: 2 }}>
+                <Col xs={{ size: 10, offset: 1 }}>
+                    <ButtonToolbar>
+                        <ButtonGroup className="mr-2">
+                            <InterlinearToggle />
+                        </ButtonGroup>
+                        <ButtonGroup className="mr-2">
+                            <RateToggle value={PlaybackRate.VerySlow} label="Very Slow" />
+                            <RateToggle value={PlaybackRate.Slow} label="Slow" />
+                            <RateToggle value={PlaybackRate.Normal} label="Normal" />
+                        </ButtonGroup>
+                        <ButtonGroup>
+                            <BookSelector />
+                            <ChapterSelector />
+                        </ButtonGroup>
+
+                    </ButtonToolbar>
                 </Col>
             </Row>
             <Row>

@@ -9,6 +9,8 @@ type SefariaResponse = {
     categories: [string],
     commentary: [string],
     he: [string],
+    heVersionSource: string,
+    heVersionTitle: string,
     next: string,
     order: [number],
     prev: string,
@@ -90,6 +92,9 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({ verse, displayInterlin
 
     return <>
         { verses }
+        <p>
+            Hebrew: <a target="_other" href={ sefariaResponse.heVersionSource }>{ sefariaResponse.heVersionTitle }</a>
+        </p>
         <p>
             English translation: <a target="_other" href={ sefariaResponse.versionSource }>{ sefariaResponse.versionTitle }</a>
         </p>
