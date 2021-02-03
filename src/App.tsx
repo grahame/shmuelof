@@ -6,9 +6,11 @@ import './App.css';
 import URLs from './urls.json';
 
 enum PlaybackRate {
-    VerySlow,
+    Very_Slow,
     Slow,
     Normal,
+    Fast,
+    Very_Fast,
 };
 
 type ControlsProps = {
@@ -38,6 +40,11 @@ function ChapterSelector() {
     </Dropdown>;
 }
 
+function PlaybackToName(rate: PlaybackRate) {
+    return PlaybackRate[rate].replaceAll('_', ' ');
+
+}
+
 function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -47,22 +54,42 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
             return;
         }
         var rate: number = 1.0;
-        if (playbackRate === PlaybackRate.VerySlow) {
+        if (playbackRate === PlaybackRate.Very_Slow) {
             rate = 0.5;
         } else if (playbackRate === PlaybackRate.Slow) {
             rate = 0.75;
+        } else if (playbackRate == PlaybackRate.Fast) {
+            rate = 1.25;
+        } else if (playbackRate == PlaybackRate.Very_Fast) {
+            rate = 1.5
         }
         audioRef.current.playbackRate = rate;
     };
     // apply the current playback rate to the ref if it exists
     applyPlayback();
 
-    function RateToggle({ value, label }: { value: PlaybackRate; label: string; }) {
+    function RateToggle({ value }: { value: PlaybackRate; }) {
+        const name = PlaybackToName(value);
         return <>
-            <ButtonToggle
+            <DropdownItem
                 className={playbackRate === value ? 'active' : undefined}
-                onClick={() => setPlaybackRate(value)}>{label}</ButtonToggle>
+                onClick={() => setPlaybackRate(value)}>{name}</DropdownItem>
         </>;
+    }
+
+    function RateControl() {
+        const [isOpen, setIsOpen] = React.useState<boolean>(false);
+        
+        return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
+            <DropdownToggle caret>{PlaybackToName(playbackRate)}</DropdownToggle>
+            <DropdownMenu>
+                <RateToggle value={PlaybackRate.Very_Slow} />
+                <RateToggle value={PlaybackRate.Slow} />
+                <RateToggle value={PlaybackRate.Normal} />
+                <RateToggle value={PlaybackRate.Fast} />
+                <RateToggle value={PlaybackRate.Very_Fast} />
+            </DropdownMenu>
+        </Dropdown>;
     }
 
     function InterlinearToggle() {
@@ -82,9 +109,7 @@ function Controls({ displayInterlinear, setDisplayInterlinear }: ControlsProps) 
                             <InterlinearToggle />
                         </ButtonGroup>
                         <ButtonGroup className="mr-2">
-                            <RateToggle value={PlaybackRate.VerySlow} label="Very Slow" />
-                            <RateToggle value={PlaybackRate.Slow} label="Slow" />
-                            <RateToggle value={PlaybackRate.Normal} label="Normal" />
+                            <RateControl />
                         </ButtonGroup>
                         <ButtonGroup>
                             <BookSelector />
