@@ -18,6 +18,7 @@ enum PlaybackRate {
     Very_Fast,
 };
 
+
 type ControlsProps = {
     displayInterlinear: boolean;
     setDisplayInterlinear: any;
@@ -94,8 +95,20 @@ function ChapterSelector({ value, set } : {value: number, set: any} ) {
 }
 
 function PlaybackToName(rate: PlaybackRate) {
-    return PlaybackRate[rate].replaceAll('_', ' ');
-
+    // horrible code here due to IE11 support
+    if (rate === PlaybackRate.Very_Fast) {
+        return "Very Fast";
+    }
+    if (rate === PlaybackRate.Fast) {
+        return "Fast";
+    }
+    if (rate === PlaybackRate.Slow) {
+        return "Slow";
+    }
+    if (rate === PlaybackRate.Very_Slow) {
+        return "Very Slow";
+    }
+    return "Normal";
 }
 
 function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, setSelectedChapter }: ControlsProps) {
