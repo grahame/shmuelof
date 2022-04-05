@@ -35,21 +35,22 @@ type VerseProps = {
 };
 
 const Verse: React.FunctionComponent<VerseProps> = ({ number, hebrew, english, interlinear }: VerseProps) => {
-    var englishElem;
-
-    if (interlinear) {
-        const sanitizedEnglish = {
-            __html: sanitize(english, {
-                allowedTags: ["b", "i", "em", "strong"],
+    const cleanup = (s: string, cn: string) => {
+        const inner = {
+            __html: sanitize(s, {
+                allowedTags: ["b", "i", "em", "strong", "small"],
             }),
         };
-        englishElem = <div className="english interlinear text-left" dangerouslySetInnerHTML={sanitizedEnglish}></div>;
-    }
+        return <div className={cn} dangerouslySetInnerHTML={inner}></div>;
+    };
+
+    const englishElem = interlinear ? cleanup(english, "english interlinear text-left") : <></>;
+    const hebrewElem = cleanup(hebrew, "biblical-hebrew text-right");
     return (
         <>
             <Row className="verse-row">
                 <Col xs={{ size: 10, offset: 1 }}>
-                    <div className="biblical-hebrew text-right">{hebrew}</div>
+                    {hebrewElem}
                     {englishElem}
                 </Col>
                 <Col xs={{ size: 1 }}>{number}</Col>
