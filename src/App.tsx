@@ -1,14 +1,26 @@
-import React from 'react';
-import { Sefaria } from './Sefaria';
-import { useRef } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { HashRouter, Route, useHistory } from 'react-router-dom';
-import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from '@fortawesome/free-solid-svg-icons'
-import { Button, ButtonToolbar, ButtonToggle, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Container, Row, Col } from 'reactstrap';
-import { Typeahead } from 'react-bootstrap-typeahead';
-import 'react-bootstrap-typeahead/css/Typeahead.css';
-import './App.css';
-import URLs from './urls.json';
+import React from "react";
+import { Sefaria } from "./Sefaria";
+import { useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { HashRouter, Route, useHistory } from "react-router-dom";
+import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from "@fortawesome/free-solid-svg-icons";
+import {
+    Button,
+    ButtonToolbar,
+    ButtonToggle,
+    ButtonGroup,
+    Dropdown,
+    DropdownToggle,
+    DropdownMenu,
+    DropdownItem,
+    Container,
+    Row,
+    Col,
+} from "reactstrap";
+import { Typeahead } from "react-bootstrap-typeahead";
+import "react-bootstrap-typeahead/css/Typeahead.css";
+import "./App.css";
+import URLs from "./urls.json";
 
 enum PlaybackRate {
     Very_Slow,
@@ -16,8 +28,7 @@ enum PlaybackRate {
     Normal,
     Fast,
     Very_Fast,
-};
-
+}
 
 type ControlsProps = {
     displayInterlinear: boolean;
@@ -27,16 +38,16 @@ type ControlsProps = {
 };
 
 type BookLabel = {
-    id: number,
-    label: string
-}
+    id: number;
+    label: string;
+};
 
-function MakeLabel(idx: number) : BookLabel {
+function MakeLabel(idx: number): BookLabel {
     var url = URLs.urls[idx];
     return {
         id: idx,
-        label: `${url.book} ${url.chapter}`
-    }
+        label: `${url.book} ${url.chapter}`,
+    };
 }
 
 function BooksAndChapters() {
@@ -51,13 +62,13 @@ function slugToChapter(slug: string) {
     if (slug === undefined) {
         return undefined;
     }
-    const [book, chapterString] = slug.split('-');
+    const [book, chapterString] = slug.split("-");
     const chapter = parseInt(chapterString);
     if (isNaN(chapter)) {
         return undefined;
     }
     for (const [idx, url] of URLs.urls.entries()) {
-        if ((url.book.toLowerCase() === book) && (url.chapter === chapter)) {
+        if (url.book.toLowerCase() === book && url.chapter === chapter) {
             return idx;
         }
     }
@@ -66,11 +77,11 @@ function slugToChapter(slug: string) {
 
 function chapterToSlug(idx: number) {
     var url = URLs.urls[idx];
-    return url.book.toLowerCase() + '-' + url.chapter;
+    return url.book.toLowerCase() + "-" + url.chapter;
 }
 
-function ChapterSelector({ value, set } : {value: number, set: any} ) {
-    const [selected, setSelected ] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
+function ChapterSelector({ value, set }: { value: number; set: any }) {
+    const [selected, setSelected] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
     const history = useHistory();
 
     // this is ugly: while someone is typing, selected from the Typeahead
@@ -83,15 +94,24 @@ function ChapterSelector({ value, set } : {value: number, set: any} ) {
         }
     }, [value, selected]);
 
-    const maybeNav = function(labels: Array<BookLabel>) {
+    const maybeNav = function (labels: Array<BookLabel>) {
         setSelected(labels);
         if (labels.length === 0) {
             return;
         }
-        history.push('/' + chapterToSlug(labels[0].id));
-    }
+        history.push("/" + chapterToSlug(labels[0].id));
+    };
 
-    return <Typeahead id="books-and-chapters" inputProps={{className: "bg-dark text-light"}} options={BooksAndChapters()} placeholder="Choose Tanakh chapter..." selected={selected} onChange={maybeNav} />
+    return (
+        <Typeahead
+            id="books-and-chapters"
+            inputProps={{ className: "bg-dark text-light" }}
+            options={BooksAndChapters()}
+            placeholder="Choose Tanakh chapter..."
+            selected={selected}
+            onChange={maybeNav}
+        />
+    );
 }
 
 function PlaybackToName(rate: PlaybackRate) {
@@ -128,43 +148,57 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
         } else if (playbackRate === PlaybackRate.Fast) {
             rate = 1.25;
         } else if (playbackRate === PlaybackRate.Very_Fast) {
-            rate = 1.5
+            rate = 1.5;
         }
         audioRef.current.playbackRate = rate;
     };
     // apply the current playback rate to the ref if it exists
     applyPlayback();
 
-    function RateToggle({ value }: { value: PlaybackRate; }) {
+    function RateToggle({ value }: { value: PlaybackRate }) {
         const name = PlaybackToName(value);
-        return <>
-            <DropdownItem
-                className={playbackRate === value ? 'active' : undefined}
-                onClick={() => setPlaybackRate(value)}>{name}</DropdownItem>
-        </>;
+        return (
+            <>
+                <DropdownItem
+                    className={playbackRate === value ? "active" : undefined}
+                    onClick={() => setPlaybackRate(value)}
+                >
+                    {name}
+                </DropdownItem>
+            </>
+        );
     }
 
     function RateControl() {
         const [isOpen, setIsOpen] = React.useState<boolean>(false);
-        
-        return <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
-            <DropdownToggle caret><FontAwesomeIcon icon={faTachometerAlt} /> {PlaybackToName(playbackRate)}</DropdownToggle>
-            <DropdownMenu>
-                <RateToggle value={PlaybackRate.Very_Slow} />
-                <RateToggle value={PlaybackRate.Slow} />
-                <RateToggle value={PlaybackRate.Normal} />
-                <RateToggle value={PlaybackRate.Fast} />
-                <RateToggle value={PlaybackRate.Very_Fast} />
-            </DropdownMenu>
-        </Dropdown>;
+
+        return (
+            <Dropdown isOpen={isOpen} toggle={() => setIsOpen(!isOpen)}>
+                <DropdownToggle caret>
+                    <FontAwesomeIcon icon={faTachometerAlt} /> {PlaybackToName(playbackRate)}
+                </DropdownToggle>
+                <DropdownMenu>
+                    <RateToggle value={PlaybackRate.Very_Slow} />
+                    <RateToggle value={PlaybackRate.Slow} />
+                    <RateToggle value={PlaybackRate.Normal} />
+                    <RateToggle value={PlaybackRate.Fast} />
+                    <RateToggle value={PlaybackRate.Very_Fast} />
+                </DropdownMenu>
+            </Dropdown>
+        );
     }
 
     function InterlinearToggle() {
-        return <>
-            <ButtonToggle
-                className={displayInterlinear ? 'active' : undefined}
-                onClick={() => setDisplayInterlinear(!displayInterlinear)}><FontAwesomeIcon icon={faGripLines} /> Interlinear</ButtonToggle>
-        </>;
+        return (
+            <>
+                <ButtonToggle
+                    className={displayInterlinear ? "active" : undefined}
+                    onClick={() => setDisplayInterlinear(!displayInterlinear)}
+                >
+                    <FontAwesomeIcon icon={faGripLines} /> Interlinear
+                </ButtonToggle>
+            </>
+        );
     }
 
     function SetOffset(offset: number): undefined {
@@ -174,79 +208,111 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
         if (selectedChapter + offset >= URLs.urls.length) {
             return;
         }
-        history.push('/' + chapterToSlug(selectedChapter + offset));
+        history.push("/" + chapterToSlug(selectedChapter + offset));
         return undefined;
     }
 
-    return <>
-        <div className="fixed-top bg-dark text-light">
-            <Row>
-                <Col xs={{ size: 10, offset: 1 }}>
-                    <ButtonToolbar>
-                        <ButtonGroup className="mr-2">
-                            <InterlinearToggle />
-                        </ButtonGroup>
-                        <ButtonGroup className="mr-2">
-                            <RateControl />
-                        </ButtonGroup>
-                        <ButtonGroup>
-                            <Button disabled={selectedChapter === 0} onClick={() => SetOffset(-1)}><FontAwesomeIcon icon={faAngleDoubleLeft} /></Button>
-                            <ChapterSelector value={selectedChapter} set={setSelectedChapter} />
-                            <Button disabled={selectedChapter >= URLs.urls.length - 1} onClick={() => SetOffset(1)}><FontAwesomeIcon icon={faAngleDoubleRight} /></Button>
-                        </ButtonGroup>
-
-                    </ButtonToolbar>
-                </Col>
-            </Row>
-            <Row>
-                <Col xs={{ size: 10, offset: 1 }}>
-                    <audio
-                        id="playback-control"
-                        ref={audioRef}
-                        controls
-                        onCanPlay={() => applyPlayback()}
-                        src={URLs.urls[selectedChapter].url} />
-                </Col>
-            </Row>
-        </div>
-    </>;
+    return (
+        <>
+            <div className="fixed-top bg-dark text-light">
+                <Row>
+                    <Col xs={{ size: 10, offset: 1 }}>
+                        <ButtonToolbar>
+                            <ButtonGroup className="mr-2">
+                                <InterlinearToggle />
+                            </ButtonGroup>
+                            <ButtonGroup className="mr-2">
+                                <RateControl />
+                            </ButtonGroup>
+                            <ButtonGroup>
+                                <Button disabled={selectedChapter === 0} onClick={() => SetOffset(-1)}>
+                                    <FontAwesomeIcon icon={faAngleDoubleLeft} />
+                                </Button>
+                                <ChapterSelector value={selectedChapter} set={setSelectedChapter} />
+                                <Button disabled={selectedChapter >= URLs.urls.length - 1} onClick={() => SetOffset(1)}>
+                                    <FontAwesomeIcon icon={faAngleDoubleRight} />
+                                </Button>
+                            </ButtonGroup>
+                        </ButtonToolbar>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col xs={{ size: 10, offset: 1 }}>
+                        <audio
+                            id="playback-control"
+                            ref={audioRef}
+                            controls
+                            onCanPlay={() => applyPlayback()}
+                            src={URLs.urls[selectedChapter].url}
+                        />
+                    </Col>
+                </Row>
+            </div>
+        </>
+    );
 }
 
 function Footer() {
-    return <>
-        <hr />
-        <Row>
-            <p>
-                English and Hebrew text from the Bible/Tanakh is taken from <a target="_other" href="https://www.sefaria.org">Sefaria</a>. Hebrew text is displayed using the <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">Society of Biblical Literature Hebrew font</a>. Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were entrusted to the Carmelites. You can find out more about Abraham Shmuelof on the site of <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">Michael Kolarcik</a>. This software was developed by Grahame Bowland, and is open source: <a href="https://github.com/grahame/shmuelof/">github.com/grahame/shmuelof</a>
-            </p>
-        </Row>
-    </>;
+    return (
+        <>
+            <hr />
+            <Row>
+                <p>
+                    English and Hebrew text from the Bible/Tanakh is taken from{" "}
+                    <a target="_other" href="https://www.sefaria.org">
+                        Sefaria
+                    </a>
+                    . Hebrew text is displayed using the{" "}
+                    <a target="_other" href="https://www.sbl-site.org/educational/BiblicalFonts_SBLHebrew.aspx">
+                        Society of Biblical Literature Hebrew font
+                    </a>
+                    . Recordings were downloaded from <a href="https://archive.org/">archive.org</a> - they were
+                    entrusted to the Carmelites. You can find out more about Abraham Shmuelof on the site of{" "}
+                    <a target="_other" href="http://individual.utoronto.ca/mfkolarcik/AbrahamShmuelof.html">
+                        Michael Kolarcik
+                    </a>
+                    . This software was developed by Grahame Bowland, and is open source:{" "}
+                    <a href="https://github.com/grahame/shmuelof/">github.com/grahame/shmuelof</a>
+                </p>
+            </Row>
+        </>
+    );
 }
 
-function ScripturePage({match}: {match: any}) {
+function ScripturePage({ match }: { match: any }) {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
     const history = useHistory();
     const selectedChapter = slugToChapter(match.params.slug);
-    const setSelectedChapter = (idx: number) => history.push('/' + chapterToSlug(idx));
+    const setSelectedChapter = (idx: number) => history.push("/" + chapterToSlug(idx));
     if (selectedChapter === undefined) {
         setSelectedChapter(0);
-        return <><p>One moment...</p> </>;
+        return (
+            <>
+                <p>One moment...</p>{" "}
+            </>
+        );
     }
     const url = URLs.urls[selectedChapter];
     const getCurrentChapter = () => `${url.book} ${url.chapter}`;
 
-
-    return <>
-        <Controls displayInterlinear={displayInterlinear} setDisplayInterlinear={setDisplayInterlinear} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} />
-        <Container id="main">
-            <Row className="mb-4 mt-4">
-                <Col xs={{ size: 12 }}>
-                    <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
-                </Col>
-            </Row>
-            <Footer />
-        </Container>
-    </>;
+    return (
+        <>
+            <Controls
+                displayInterlinear={displayInterlinear}
+                setDisplayInterlinear={setDisplayInterlinear}
+                selectedChapter={selectedChapter}
+                setSelectedChapter={setSelectedChapter}
+            />
+            <Container id="main">
+                <Row className="mb-4 mt-4">
+                    <Col xs={{ size: 12 }}>
+                        <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
+                    </Col>
+                </Row>
+                <Footer />
+            </Container>
+        </>
+    );
 }
 
 function App() {
