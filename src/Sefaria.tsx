@@ -38,14 +38,17 @@ const Verse: React.FunctionComponent<VerseProps> = ({ number, hebrew, english, i
     const cleanup = (s: string, cn: string) => {
         const inner = {
             __html: sanitize(s, {
-                allowedTags: ["b", "i", "em", "strong", "small"],
+                allowedTags: ["b", "em", "strong", "small"],
+                allowedAttributes: {},
+                // throw away sefaria footnotes
+                nonTextTags: ["sup", "i", "style", "script", "textarea", "option", "noscript"],
             }),
         };
         return <div className={cn} dangerouslySetInnerHTML={inner}></div>;
     };
 
     const englishElem = interlinear ? cleanup(english, "english interlinear text-left") : <></>;
-    const hebrewElem = cleanup(hebrew, "biblical-hebrew text-right");
+    const hebrewElem = cleanup(hebrew, "biblical-hebrew text-end");
     return (
         <>
             <Row className="verse-row">

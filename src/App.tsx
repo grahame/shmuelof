@@ -2,7 +2,7 @@ import React from "react";
 import { Sefaria } from "./Sefaria";
 import { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { HashRouter, Route, useHistory } from "react-router-dom";
+import { HashRouter, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from "@fortawesome/free-solid-svg-icons";
 import {
     Button,
@@ -42,23 +42,23 @@ type BookLabel = {
     label: string;
 };
 
-function MakeLabel(idx: number): BookLabel {
+const MakeLabel = (idx: number): BookLabel => {
     var url = URLs.urls[idx];
     return {
         id: idx,
         label: `${url.book} ${url.chapter}`,
     };
-}
+};
 
-function BooksAndChapters() {
+const BooksAndChapters = () => {
     var books = new Array<BookLabel>();
     for (const [idx] of URLs.urls.entries()) {
         books.push(MakeLabel(idx));
     }
     return books;
-}
+};
 
-function slugToChapter(slug: string) {
+const slugToChapter = (slug: string | undefined) => {
     if (slug === undefined) {
         return undefined;
     }
@@ -73,16 +73,16 @@ function slugToChapter(slug: string) {
         }
     }
     return undefined;
-}
+};
 
-function chapterToSlug(idx: number) {
+const chapterToSlug = (idx: number) => {
     var url = URLs.urls[idx];
     return url.book.toLowerCase() + "-" + url.chapter;
-}
+};
 
-function ChapterSelector({ value, set }: { value: number; set: any }) {
+const ChapterSelector: React.FC<{ value: number; set: any }> = ({ value, set }) => {
     const [selected, setSelected] = React.useState<Array<BookLabel>>([MakeLabel(value)]);
-    const history = useHistory();
+    const navigate = useNavigate();
 
     // this is ugly: while someone is typing, selected from the Typeahead
     // control goes to `undefined`. we need to allow this for the internal
@@ -94,12 +94,13 @@ function ChapterSelector({ value, set }: { value: number; set: any }) {
         }
     }, [value, selected]);
 
-    const maybeNav = function (labels: Array<BookLabel>) {
+    const maybeNav = (selected: any) => {
+        const labels = selected as BookLabel[];
         setSelected(labels);
         if (labels.length === 0) {
             return;
         }
-        history.push("/" + chapterToSlug(labels[0].id));
+        navigate("/" + chapterToSlug(labels[0].id));
     };
 
     return (
@@ -112,9 +113,9 @@ function ChapterSelector({ value, set }: { value: number; set: any }) {
             onChange={maybeNav}
         />
     );
-}
+};
 
-function PlaybackToName(rate: PlaybackRate) {
+const PlaybackToName = (rate: PlaybackRate) => {
     // horrible code here due to IE11 support
     if (rate === PlaybackRate.Very_Fast) {
         return "Very Fast";
@@ -129,11 +130,16 @@ function PlaybackToName(rate: PlaybackRate) {
         return "Very Slow";
     }
     return "Normal";
-}
+};
 
-function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, setSelectedChapter }: ControlsProps) {
+const Controls: React.FC<ControlsProps> = ({
+    displayInterlinear,
+    setDisplayInterlinear,
+    selectedChapter,
+    setSelectedChapter,
+}) => {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
-    const history = useHistory();
+    const navigate = useNavigate();
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const applyPlayback = () => {
@@ -155,7 +161,7 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
     // apply the current playback rate to the ref if it exists
     applyPlayback();
 
-    function RateToggle({ value }: { value: PlaybackRate }) {
+    const RateToggle: React.FC<{ value: PlaybackRate }> = ({ value }) => {
         const name = PlaybackToName(value);
         return (
             <>
@@ -167,9 +173,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                 </DropdownItem>
             </>
         );
-    }
+    };
 
-    function RateControl() {
+    const RateControl: React.FC = () => {
         const [isOpen, setIsOpen] = React.useState<boolean>(false);
 
         return (
@@ -186,9 +192,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                 </DropdownMenu>
             </Dropdown>
         );
-    }
+    };
 
-    function InterlinearToggle() {
+    const InterlinearToggle: React.FC = () => {
         return (
             <>
                 <ButtonToggle
@@ -199,18 +205,17 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
                 </ButtonToggle>
             </>
         );
-    }
+    };
 
-    function SetOffset(offset: number): undefined {
+    const SetOffset = (offset: number) => {
         if (selectedChapter + offset < 0) {
             return;
         }
         if (selectedChapter + offset >= URLs.urls.length) {
             return;
         }
-        history.push("/" + chapterToSlug(selectedChapter + offset));
-        return undefined;
-    }
+        navigate("/" + chapterToSlug(selectedChapter + offset));
+    };
 
     return (
         <>
@@ -250,9 +255,9 @@ function Controls({ displayInterlinear, setDisplayInterlinear, selectedChapter, 
             </div>
         </>
     );
-}
+};
 
-function Footer() {
+const Footer: React.FC = () => {
     return (
         <>
             <hr />
@@ -277,18 +282,26 @@ function Footer() {
             </Row>
         </>
     );
-}
+};
 
-function ScripturePage({ match }: { match: any }) {
+const ScripturePage: React.FC = () => {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
-    const history = useHistory();
-    const selectedChapter = slugToChapter(match.params.slug);
-    const setSelectedChapter = (idx: number) => history.push("/" + chapterToSlug(idx));
+    const { slug } = useParams();
+    const navigate = useNavigate();
+
+    const selectedChapter = slugToChapter(slug);
+    const setSelectedChapter = React.useCallback((idx: number) => navigate("/" + chapterToSlug(idx)), [navigate]);
+
+    React.useEffect(() => {
+        if (slug === undefined) {
+            setSelectedChapter(0);
+        }
+    }, [slug, setSelectedChapter]);
+
     if (selectedChapter === undefined) {
-        setSelectedChapter(0);
         return (
             <>
-                <p>One moment...</p>{" "}
+                <p>One moment...</p>
             </>
         );
     }
@@ -313,14 +326,16 @@ function ScripturePage({ match }: { match: any }) {
             </Container>
         </>
     );
-}
+};
 
-function App() {
+const App: React.FC = () => {
     return (
         <HashRouter>
-            <Route path="/:slug?" render={(props) => <ScripturePage match={props.match} />} />
+            <Routes>
+                <Route path="/:slug?" element={<ScripturePage />} />
+            </Routes>
         </HashRouter>
     );
-}
+};
 
 export default App;
