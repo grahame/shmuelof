@@ -31,8 +31,6 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "dev": "vite"
   },
   "eslintConfig": {
@@ -56,7 +54,6 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "prettier": "^3.6.2",
-    "react-scripts": "5.0.1",
     "@types/node": "^22.15.19",
     "@vitejs/plugin-react": "^5.0.4",
     "vite": "^7.1.12",
