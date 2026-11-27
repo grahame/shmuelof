@@ -2,6 +2,47 @@
     padding-top: 90px;
 }
 
+#main.with-passage-bar {
+    padding-top: 130px;
+}
+
+.verse-row {
+    scroll-margin-top: 140px;
+    scroll-margin-bottom: 20px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.verse-row.selected {
+    background-color: rgba(13, 110, 253, 0.08);
+}
+
+.verse-row.current {
+    background-color: rgba(255, 193, 7, 0.18);
+}
+
+.verse-number {
+    border: none;
+    background: none;
+    padding: 0 0.4em;
+    color: #0d6efd;
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
+
+.verse-number:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-radius: 4px;
+}
+
+.passage-bar {
+    padding: 4px 0 6px;
+}
+
+.passage-label {
+    align-self: center;
+}
+
 .interlinear {
     padding-top: 1em;
 }

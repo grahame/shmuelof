@@ -1,9 +1,28 @@
 import React from "react";
 import { Sefaria } from "./Sefaria";
-import { useRef } from "react";
+import {
+    Alignment,
+    Passage,
+    downloadClip,
+    parsePassage,
+    passageTimes,
+    passageToString,
+    useAlignment,
+    verseAt,
+} from "./Alignment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { HashRouter, Route, Routes, useNavigate, useParams } from "react-router-dom";
-import { faAngleDoubleLeft, faAngleDoubleRight, faTachometerAlt, faGripLines } from "@fortawesome/free-solid-svg-icons";
+import {
+    faAngleDoubleLeft,
+    faAngleDoubleRight,
+    faTachometerAlt,
+    faGripLines,
+    faPlay,
+    faPause,
+    faRepeat,
+    faDownload,
+    faXmark,
+} from "@fortawesome/free-solid-svg-icons";
 import {
     Button,
     ButtonToolbar,
@@ -35,6 +54,9 @@ type ControlsProps = {
     setDisplayInterlinear: any;
     selectedChapter: number;
     setSelectedChapter: any;
+    audioRef: React.RefObject<HTMLAudioElement | null>;
+    onLoadedMetadata: () => void;
+    passageBar: React.ReactNode;
 };
 
 type BookLabel = {
@@ -137,10 +159,12 @@ const Controls: React.FC<ControlsProps> = ({
     setDisplayInterlinear,
     selectedChapter,
     setSelectedChapter,
+    audioRef,
+    onLoadedMetadata,
+    passageBar,
 }) => {
     const [playbackRate, setPlaybackRate] = React.useState<PlaybackRate>(PlaybackRate.Normal);
     const navigate = useNavigate();
-    const audioRef = useRef<HTMLAudioElement>(null);
 
     const applyPlayback = () => {
         if (!audioRef.current) {
@@ -248,10 +272,12 @@ const Controls: React.FC<ControlsProps> = ({
                             ref={audioRef}
                             controls
                             onCanPlay={() => applyPlayback()}
+                            onLoadedMetadata={onLoadedMetadata}
                             src={URLs.urls[selectedChapter].url}
                         />
                     </Col>
                 </Row>
+                {passageBar}
             </div>
         </>
     );
@@ -284,9 +310,70 @@ const Footer: React.FC = () => {
     );
 };
 
+type PassageBarProps = {
+    alignment: Alignment;
+    passage: Passage;
+    audioUrl: string;
+    playing: boolean;
+    loop: boolean;
+    setLoop: (loop: boolean) => void;
+    play: () => void;
+    pause: () => void;
+    clear: () => void;
+};
+
+const PassageBar: React.FC<PassageBarProps> = ({
+    alignment,
+    passage,
+    audioUrl,
+    playing,
+    loop,
+    setLoop,
+    play,
+    pause,
+    clear,
+}) => {
+    const [downloading, setDownloading] = React.useState(false);
+    const { start, end } = passageTimes(alignment, passage);
+    const download = () => {
+        setDownloading(true);
+        downloadClip(audioUrl, alignment, passage)
+            .catch((e) => alert(`Unable to create clip: ${e}`))
+            .finally(() => setDownloading(false));
+    };
+    const label = `${alignment.book} ${alignment.chapter}:${passageToString(passage).replace("-", "–")}`;
+    return (
+        <Row className="passage-bar">
+            <Col xs={{ size: 10, offset: 1 }}>
+                <ButtonToolbar>
+                    <span className="passage-label me-2">
+                        {label} <small style={{ opacity: 0.7 }}>({(end - start).toFixed(1)} s)</small>
+                    </span>
+                    <ButtonGroup className="me-2">
+                        <Button size="sm" onClick={playing ? pause : play}>
+                            <FontAwesomeIcon icon={playing ? faPause : faPlay} /> {playing ? "Pause" : "Play passage"}
+                        </Button>
+                        <ButtonToggle size="sm" className={loop ? "active" : undefined} onClick={() => setLoop(!loop)}>
+                            <FontAwesomeIcon icon={faRepeat} /> Loop
+                        </ButtonToggle>
+                        <Button size="sm" disabled={downloading} onClick={download}>
+                            <FontAwesomeIcon icon={faDownload} /> {downloading ? "Preparing…" : "Download clip"}
+                        </Button>
+                    </ButtonGroup>
+                    <ButtonGroup>
+                        <Button size="sm" title="Clear selection" onClick={clear}>
+                            <FontAwesomeIcon icon={faXmark} />
+                        </Button>
+                    </ButtonGroup>
+                </ButtonToolbar>
+            </Col>
+        </Row>
+    );
+};
+
 const ScripturePage: React.FC = () => {
     const [displayInterlinear, setDisplayInterlinear] = React.useState<boolean>(false);
-    const { slug } = useParams();
+    const { slug, verses } = useParams();
     const navigate = useNavigate();
 
     const selectedChapter = slugToChapter(slug);
@@ -305,8 +392,157 @@ const ScripturePage: React.FC = () => {
             </>
         );
     }
+    return (
+        <ChapterView
+            key={selectedChapter}
+            selectedChapter={selectedChapter}
+            setSelectedChapter={setSelectedChapter}
+            displayInterlinear={displayInterlinear}
+            setDisplayInterlinear={setDisplayInterlinear}
+            verses={verses}
+            navigate={navigate}
+        />
+    );
+};
+
+type ChapterViewProps = {
+    selectedChapter: number;
+    setSelectedChapter: (idx: number) => void;
+    displayInterlinear: boolean;
+    setDisplayInterlinear: (v: boolean) => void;
+    verses: string | undefined;
+    navigate: ReturnType<typeof useNavigate>;
+};
+
+const ChapterView: React.FC<ChapterViewProps> = ({
+    selectedChapter,
+    setSelectedChapter,
+    displayInterlinear,
+    setDisplayInterlinear,
+    verses,
+    navigate,
+}) => {
+    const audioRef = React.useRef<HTMLAudioElement>(null);
+    const [verseCount, setVerseCount] = React.useState<number>();
+    const [currentVerse, setCurrentVerse] = React.useState<number>();
+    const [passagePlaying, setPassagePlaying] = React.useState(false);
+    const [loop, setLoop] = React.useState(false);
     const url = URLs.urls[selectedChapter];
-    const getCurrentChapter = () => `${url.book} ${url.chapter}`;
+    const rawAlignment = useAlignment(url.book, url.chapter);
+    // Only use the alignment if it matches the text we're displaying.
+    const alignment = rawAlignment && verseCount === rawAlignment.verses.length ? rawAlignment : undefined;
+    React.useEffect(() => {
+        if (rawAlignment && verseCount !== undefined && verseCount !== rawAlignment.verses.length) {
+            console.warn(
+                `alignment has ${rawAlignment.verses.length} verses but Sefaria returned ${verseCount}; ignoring alignment`,
+            );
+        }
+    }, [rawAlignment, verseCount]);
+
+    const parsed = parsePassage(verses);
+    const passage = alignment && parsed && parsed.to <= alignment.verses.length ? parsed : undefined;
+
+    // Refs so the animation-frame loop always sees the latest state.
+    const state = React.useRef({ alignment, passage, passagePlaying, loop });
+    state.current = { alignment, passage, passagePlaying, loop };
+
+    // Track the current verse, and stop (or loop) at the end of a passage. We poll on
+    // animation frames rather than using `timeupdate`, which only fires every ~250ms.
+    React.useEffect(() => {
+        let frame = 0;
+        const tick = () => {
+            const audio = audioRef.current;
+            const { alignment, passage, passagePlaying, loop } = state.current;
+            if (audio && alignment) {
+                const t = audio.currentTime;
+                if (passage && passagePlaying) {
+                    const { start, end } = passageTimes(alignment, passage);
+                    if (t >= end) {
+                        if (loop) {
+                            audio.currentTime = start;
+                        } else {
+                            audio.pause();
+                            // just inside the passage, so the last verse stays highlighted
+                            audio.currentTime = end - 0.01;
+                            setPassagePlaying(false);
+                        }
+                    }
+                }
+                setCurrentVerse(verseAt(alignment, audio.currentTime));
+            }
+            frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [audioRef, setCurrentVerse, setPassagePlaying]);
+
+    // Pausing with the native controls ends passage playback.
+    React.useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        const onPause = () => setPassagePlaying(false);
+        audio.addEventListener("pause", onPause);
+        return () => audio.removeEventListener("pause", onPause);
+    }, [audioRef, setPassagePlaying]);
+
+    const seekToPassage = React.useCallback(() => {
+        const audio = audioRef.current;
+        if (audio && alignment && passage && audio.readyState >= 1) {
+            audio.currentTime = passageTimes(alignment, passage).start;
+        }
+    }, [audioRef, alignment, passage]);
+
+    // A link to a passage (#/genesis-1/5-12) cues the audio up at its start.
+    const cued = React.useRef(false);
+    React.useEffect(() => {
+        if (!cued.current && alignment && passage) {
+            cued.current = true;
+            seekToPassage();
+        }
+    }, [alignment, passage, seekToPassage]);
+
+    const setPassage = (p: Passage | undefined) => {
+        const base = "/" + chapterToSlug(selectedChapter);
+        navigate(p ? `${base}/${passageToString(p)}` : base, { replace: true });
+    };
+
+    const onVerseClick = (v: number, extend: boolean) => {
+        const audio = audioRef.current;
+        if (!audio || !alignment) return;
+        if (extend && passage) {
+            setPassage({ from: Math.min(passage.from, v), to: Math.max(passage.to, v) });
+            return;
+        }
+        setPassage({ from: v, to: v });
+        setPassagePlaying(false);
+        audio.currentTime = alignment.verses[v - 1].start;
+        audio.play();
+    };
+
+    const playPassage = () => {
+        const audio = audioRef.current;
+        if (!audio || !alignment || !passage) return;
+        const { start, end } = passageTimes(alignment, passage);
+        if (audio.currentTime < start || audio.currentTime >= end - 0.05) {
+            audio.currentTime = start;
+        }
+        audio.play().then(() => setPassagePlaying(true));
+    };
+
+    const passageBar =
+        alignment && passage ? (
+            <PassageBar
+                alignment={alignment}
+                passage={passage}
+                audioUrl={url.url}
+                playing={passagePlaying}
+                loop={loop}
+                setLoop={setLoop}
+                play={playPassage}
+                pause={() => audioRef.current?.pause()}
+                clear={() => setPassage(undefined)}
+            />
+        ) : null;
 
     return (
         <>
@@ -315,11 +551,21 @@ const ScripturePage: React.FC = () => {
                 setDisplayInterlinear={setDisplayInterlinear}
                 selectedChapter={selectedChapter}
                 setSelectedChapter={setSelectedChapter}
+                audioRef={audioRef}
+                onLoadedMetadata={seekToPassage}
+                passageBar={passageBar}
             />
-            <Container id="main">
+            <Container id="main" className={passageBar ? "with-passage-bar" : undefined}>
                 <Row className="mb-4 mt-4">
                     <Col xs={{ size: 12 }}>
-                        <Sefaria displayInterlinear={displayInterlinear} verse={getCurrentChapter()}></Sefaria>
+                        <Sefaria
+                            displayInterlinear={displayInterlinear}
+                            verse={`${url.book} ${url.chapter}`}
+                            currentVerse={currentVerse}
+                            selection={passage}
+                            onVerseCount={setVerseCount}
+                            onVerseClick={alignment ? onVerseClick : undefined}
+                        ></Sefaria>
                     </Col>
                 </Row>
                 <Footer />
@@ -332,7 +578,7 @@ const App: React.FC = () => {
     return (
         <HashRouter>
             <Routes>
-                <Route path="/:slug?" element={<ScripturePage />} />
+                <Route path="/:slug?/:verses?" element={<ScripturePage />} />
             </Routes>
         </HashRouter>
     );
