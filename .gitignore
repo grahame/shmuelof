@@ -22,3 +22,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# verse alignment working files
+/tools/align/.cache
+__pycache__
