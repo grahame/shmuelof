@@ -5,7 +5,9 @@ export type VerseTiming = {
     v: number;
     start: number;
     end: number;
-    conf: number;
+    conf: number | null;
+    /** in the verse numbering but not in the text or the recording (e.g. Joshua 21:36-37) */
+    absent?: boolean;
 };
 
 export type Alignment = {

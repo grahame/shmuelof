@@ -181,6 +181,23 @@ def frame_energy(wav: np.ndarray, hop=0.01, smooth=5):
 
 
 def align_chapter(wav: np.ndarray, verses: list[list[tuple[str, str]]]):
+    """
+    Verses with no text (MAM prints Joshua 21:36-37 as "—", following the
+    Aleppo Codex) get a zero-length timing at the boundary where they would be.
+    """
+    present = [i for i, v in enumerate(verses) if v]
+    aligned, duration = _align_present(wav, [verses[i] for i in present])
+    out, it = [], iter(aligned)
+    for i, v in enumerate(verses):
+        if v:
+            out.append(dict(next(it), v=i + 1))
+        else:
+            at = out[-1]["end"] if out else aligned[0]["start"]
+            out.append({"v": i + 1, "start": at, "end": at, "conf": None, "gap": None, "absent": True, "words": []})
+    return out, duration
+
+
+def _align_present(wav: np.ndarray, verses: list[list[tuple[str, str]]]):
     words = [r for v in verses for _, r in v]
     timings = align_words(wav, words)
     energy, hop = frame_energy(wav)
@@ -239,6 +256,8 @@ def apply_overrides(verses, overrides: dict):
 
 def flags(v):
     f = []
+    if v.get("absent"):
+        return ["absent-from-text"]
     if v["conf"] < LOW_CONFIDENCE:
         f.append("low-confidence")
     if v["gap"] is not None and v["gap"] < MIN_GAP:
@@ -309,9 +328,10 @@ def update_one(key, u, version, overrides, args):
         print(f"{key}: aligning")
 
     empty = [i + 1 for i, v in enumerate(verses) if not v]
+    if len(empty) == len(verses):
+        raise RuntimeError("no spoken text in this chapter")
     if empty:
-        print(f"  ! verses with no spoken text: {empty}", file=sys.stderr)
-        return
+        print(f"  verses with no text in {version}: {empty}", flush=True)
 
     wav = decode(audio)
     aligned, duration = align_chapter(wav, verses)
@@ -332,7 +352,7 @@ def update_one(key, u, version, overrides, args):
     }
     out_path.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n")
     flagged = [(v["v"], flags(v)) for v in aligned if flags(v)]
-    mean = np.mean([v["conf"] for v in aligned])
+    mean = np.mean([v["conf"] for v in aligned if v["conf"] is not None])
     print(f"  {len(aligned)} verses, mean confidence {mean:.2f}, flagged: {flagged or 'none'}", flush=True)
 
 
@@ -344,7 +364,7 @@ def report(args):
             gap = "    " if v["gap"] is None else f"{v['gap']:.2f}"
             print(
                 f"  {v['v']:>3}  {v['start']:8.2f} – {v['end']:8.2f}"
-                f"  conf {v['conf']:.2f}  gap {gap}  {' '.join(flags(v))}"
+                f"  conf {v['conf'] or 0:.2f}  gap {gap}  {' '.join(flags(v))}"
             )
 
 

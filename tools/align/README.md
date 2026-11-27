@@ -97,6 +97,19 @@ A chapter is also re-aligned when its audio file changes, its entry in
   Hebrew as consonants only, which lowers the score even when the alignment is
   right, so anything above 0.3 has so far been correct.
 - `no-pause`: there is less than 80 ms between verses, so the cut may be audible.
+- `absent-from-text`: the verse is empty in the pinned text. MAM prints Joshua
+  21:36–37 as "—", following the Aleppo Codex, and Shmuelof doesn't read them
+  either. Such a verse gets a zero-length timing, `absent: true`, and the app
+  ignores clicks on it.
+
+Other things a full run found that are correct but look odd in the numbers:
+- Numbers 7:79 is three times longer than its parallel verses because the
+  recording has long pauses inside it.
+- Lamentations 5 ends with about 70 s of Shmuelof repeating verse 21 after
+  verse 22, as is traditionally done. It's left outside every verse.
+- The book-of-lists chapters (Numbers 1–2 and 33–34, Genesis 5 and 11) have the
+  lowest confidence. A spot check of verse openings in Numbers 2 found every
+  boundary in the right place.
 
 To fix a boundary by hand, add it to `overrides.json` and run `update`.
 Moving a verse's `start` also moves the previous verse's `end`.

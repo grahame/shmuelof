@@ -508,7 +508,7 @@ const ChapterView: React.FC<ChapterViewProps> = ({
 
     const onVerseClick = (v: number, extend: boolean) => {
         const audio = audioRef.current;
-        if (!audio || !alignment) return;
+        if (!audio || !alignment || alignment.verses[v - 1].absent) return;
         if (extend && passage) {
             setPassage({ from: Math.min(passage.from, v), to: Math.max(passage.to, v) });
             return;
