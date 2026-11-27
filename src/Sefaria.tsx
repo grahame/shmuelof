@@ -112,6 +112,11 @@ type SefariaProps = {
     onVerseClick?: (verse: number, extend: boolean) => void;
 };
 
+// Sefaria gives some version titles in capitals ("THE JPS TANAKH: ...").
+// Title-case shouty words, keeping short acronyms like "JPS".
+const softenCaps = (title: string) =>
+    title.replace(/\b[A-Z]{3,}\b/g, (w) => (w.length > 3 || w === "THE" ? w[0] + w.slice(1).toLowerCase() : w));
+
 const Sefaria: React.FunctionComponent<SefariaProps> = ({
     verse,
     displayInterlinear,
@@ -177,7 +182,7 @@ const Sefaria: React.FunctionComponent<SefariaProps> = ({
             <p>
                 English translation:{" "}
                 <a target="_other" href={sefariaResponse.versionSource}>
-                    {sefariaResponse.versionTitle}
+                    {softenCaps(sefariaResponse.versionTitle)}
                 </a>
             </p>
         </>
