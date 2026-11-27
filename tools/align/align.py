@@ -2,8 +2,8 @@
 # /// script
 # requires-python = ">=3.11,<3.13"
 # dependencies = [
-#     "torch==2.5.1",
-#     "torchaudio==2.5.1",
+#     "torch==2.15.0",
+#     "torchaudio==2.11.1",
 #     "numpy",
 #     "requests",
 # ]
