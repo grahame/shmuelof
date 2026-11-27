@@ -264,62 +264,76 @@ def update(args):
     overrides = json.loads(OVERRIDES.read_text()) if OVERRIDES.exists() else {}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    for key in keys:
-        u = all_chapters[key]
-        html_verses = fetch_text(u["book"], u["chapter"], version)
-        verses = [hebrew.romanise_verse(hebrew.spoken_hebrew(h)) for h in html_verses]
-        text_hashes = [sha(" ".join(r for _, r in v), 8) for v in verses]
-        ov = overrides.get(key, {})
-        audio = fetch_audio(u["url"], key, args.refresh_audio)
-        audio_hash = sha(audio.read_bytes())
+    failures = []
+    for n, key in enumerate(keys, 1):
+        print(f"[{n}/{len(keys)}] ", end="", flush=True)
+        try:
+            update_one(key, all_chapters[key], version, overrides, args)
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print(f"{key}: FAILED: {e!r}", flush=True)
+            failures.append(key)
+    if failures:
+        print(f"\n{len(failures)} chapter(s) failed (re-run update to retry): {' '.join(failures)}")
+        sys.exit(1)
 
-        out_path = OUT_DIR / f"{key}.json"
-        if out_path.exists() and not args.force:
-            old = json.loads(out_path.read_text())
-            if (
-                old.get("pipeline") == PIPELINE_VERSION
-                and old.get("textVersion") == version
-                and old.get("audioSha256") == audio_hash
-                and old.get("overridesSha") == sha(json.dumps(ov, sort_keys=True), 8)
-                and [v.get("text") for v in old["verses"]] == text_hashes
-            ):
-                print(f"{key}: up to date")
-                continue
-            changed = [
-                i + 1
-                for i, (a, b) in enumerate(zip([v.get("text") for v in old["verses"]], text_hashes))
-                if a != b
-            ]
-            print(f"{key}: re-aligning (changed verses: {changed or 'n/a'})")
-        else:
-            print(f"{key}: aligning")
 
-        empty = [i + 1 for i, v in enumerate(verses) if not v]
-        if empty:
-            print(f"  ! verses with no spoken text: {empty}", file=sys.stderr)
-            continue
+def update_one(key, u, version, overrides, args):
+    html_verses = fetch_text(u["book"], u["chapter"], version)
+    verses = [hebrew.romanise_verse(hebrew.spoken_hebrew(h)) for h in html_verses]
+    text_hashes = [sha(" ".join(r for _, r in v), 8) for v in verses]
+    ov = overrides.get(key, {})
+    audio = fetch_audio(u["url"], key, args.refresh_audio)
+    audio_hash = sha(audio.read_bytes())
 
-        wav = decode(audio)
-        aligned, duration = align_chapter(wav, verses)
-        for v, h in zip(aligned, text_hashes):
-            v["text"] = h
-        apply_overrides(aligned, ov)
+    out_path = OUT_DIR / f"{key}.json"
+    if out_path.exists() and not args.force:
+        old = json.loads(out_path.read_text())
+        if (
+            old.get("pipeline") == PIPELINE_VERSION
+            and old.get("textVersion") == version
+            and old.get("audioSha256") == audio_hash
+            and old.get("overridesSha") == sha(json.dumps(ov, sort_keys=True), 8)
+            and [v.get("text") for v in old["verses"]] == text_hashes
+        ):
+            print(f"{key}: up to date", flush=True)
+            return
+        changed = [
+            i + 1
+            for i, (a, b) in enumerate(zip([v.get("text") for v in old["verses"]], text_hashes))
+            if a != b
+        ]
+        print(f"{key}: re-aligning (changed verses: {changed or 'n/a'})")
+    else:
+        print(f"{key}: aligning")
 
-        doc = {
-            "pipeline": PIPELINE_VERSION,
-            "book": u["book"],
-            "chapter": u["chapter"],
-            "audio": u["url"],
-            "audioSha256": audio_hash,
-            "duration": round(duration, 3),
-            "textVersion": version,
-            "overridesSha": sha(json.dumps(ov, sort_keys=True), 8),
-            "verses": aligned,
-        }
-        out_path.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n")
-        flagged = [(v["v"], flags(v)) for v in aligned if flags(v)]
-        mean = np.mean([v["conf"] for v in aligned])
-        print(f"  {len(aligned)} verses, mean confidence {mean:.2f}, flagged: {flagged or 'none'}")
+    empty = [i + 1 for i, v in enumerate(verses) if not v]
+    if empty:
+        print(f"  ! verses with no spoken text: {empty}", file=sys.stderr)
+        return
+
+    wav = decode(audio)
+    aligned, duration = align_chapter(wav, verses)
+    for v, h in zip(aligned, text_hashes):
+        v["text"] = h
+    apply_overrides(aligned, ov)
+
+    doc = {
+        "pipeline": PIPELINE_VERSION,
+        "book": u["book"],
+        "chapter": u["chapter"],
+        "audio": u["url"],
+        "audioSha256": audio_hash,
+        "duration": round(duration, 3),
+        "textVersion": version,
+        "overridesSha": sha(json.dumps(ov, sort_keys=True), 8),
+        "verses": aligned,
+    }
+    out_path.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")) + "\n")
+    flagged = [(v["v"], flags(v)) for v in aligned if flags(v)]
+    mean = np.mean([v["conf"] for v in aligned])
+    print(f"  {len(aligned)} verses, mean confidence {mean:.2f}, flagged: {flagged or 'none'}", flush=True)
 
 
 def report(args):
